@@ -1,0 +1,73 @@
+"""PROBLEM:
+
+Prepare the Bunnies' Escape
+----------------------------
+
+You're awfully close to destroying the LAMBCHOP doomsday device and freeing Commander Lambda's bunny prisoners, but once they're free of
+the prison blocks, the bunnies are going to need to escape Lambda's space station via the escape pods as quickly as possible.
+Unfortunately, the halls of the space station are a maze of corridors and dead ends that will be a deathtrap for the escaping bunnies.
+Fortunately, Commander Lambda has put you in charge of a remodeling project that will give you the opportunity to make things a little
+easier for the bunnies. Unfortunately (again), you can't just remove all obstacles between the bunnies and the escape pods- at most you can
+remove one wall per escape pod path, both to maintain structural integrity of the station and to avoid arousing Commander Lambda's 
+suspicions.
+
+You have maps of parts of the space station, each starting at a prison exit and ending at the door to an escape pod. The map is represented
+as a matrix of 0s and 1s, where 0s are passable space and 1s are impassable walls. The door out of the prison is at the top left (0,0) and
+the door into an escape pod is at the bottom right (w-1,h-1).
+
+Write a function answer(map) that generates the length of the shortest path from the prison door to the escape pod, where you are allowed
+to remove one wall as part of your remodeling plans. The path length is the total number of nodes you pass through, counting both the
+entrance and exit nodes. The starting and ending positions are always passable (0). The map will always be solvable, though you may or may
+not need to remove a wall. The height and width of the map can be from 2 to 20. Moves can only be made in the cardinal directions; no
+diagonal moves are allowed."""
+
+#SOLUTION
+
+"""The problem is a maze pathfinding problem, with the 1's of the matrix being the walls and the 0's forming the paths.
+To find the shortest path through the maze, make two associated 'boards' for each maze, one with the starting point as
+(0,0) and one with the starting point as the end of the maze. The values in the board matrices tell you how many steps
+it takes to get to the corresponding point in the maze, if you start at (0,0) (or the end). From the values in these
+boards you can calculate the length of the shortest possible path through the maze."""
+
+def makeBoard(maze, startingX, startingY, height, width):
+    board = [[None for i in range(width)] for i in range(height)]
+    board[startingX][startingY] = 1
+
+    arr = [(startingX, startingY)]
+    while arr:
+        currentX, currentY = arr.pop(0)
+        for i in [[1,0],[-1,0],[0,-1],[0,1]]:
+            newX, newY = currentX + i[0], currentY + i[1]
+            if 0 <= newX < height and 0 <= newY < width:
+                if board[newX][newY] is None:
+                    board[newX][newY] = board[currentX][currentY] + 1
+                    if maze[newX][newY] == 1 :
+                        continue
+                    arr.append((newX, newY))                  
+    return board
+
+def answer(maze):
+    #get height and width of maze
+    height = len(maze)
+    width = len(maze[0])
+    
+    #get the two boards, one with the start of the maze at the starting point, the other with the end as the starting point
+    boardStartingAtStart = makeBoard(maze, 0, 0, height, width)
+    boardStartingAtEnd = makeBoard(maze, height-1, width-1, height, width)
+    
+    #initialize shortestPathLength as something big to start
+    shortestPathLength = 1000
+    #loop through the rows and column of the boards, which are the same size as the maze
+    for i in range(height):
+        for j in range(width):
+            #make sure neither of the values are None
+            #can use 'or' because if a None value exists at an index in one board, it exists at the same index in the other board
+            if boardStartingAtStart[i][j] or boardStartingAtEnd[i][j]:
+                #for the location (i,j), take the values at those locations in both boards, add them together, and subtract 1
+                #subtract 1 so you don't double-count the starting point
+                #perform these calculations for all (i,j) in the maze. The smallest result is the shortest path length
+                shortestPathLength = min(boardStartingAtStart[i][j] + boardStartingAtEnd[i][j] - 1, shortestPathLength)
+                #the shortest path length possible is width+height-1. if shortestPathLength is equal to this at any point, we can stop
+                if shortestPathLength == (width + height - 1):
+                    return shortestPathLength
+    return shortestPathLength
