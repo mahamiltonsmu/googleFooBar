@@ -1,0 +1,128 @@
+"""PROBLEM:
+
+Bomb, Baby!
+===========
+
+You're so close to destroying the LAMBCHOP doomsday device you can taste it! But
+in order to do so, you need to deploy special self-replicating bombs designed
+for you by the brightest scientists on Bunny Planet. There are two types: Mach
+bombs (M) and Facula bombs (F). The bombs, once released into the LAMBCHOP's
+inner workings, will automatically deploy to all the strategic points you've
+identified and destroy them at the same time.
+
+But there's a few catches. First, the bombs self-replicate via one of two
+distinct processes: Every Mach bomb retrieves a sync unit from a Facula bomb;
+for every Mach bomb, a Facula bomb is created; Every Facula bomb spontaneously
+creates a Mach bomb.
+
+For example, if you had 3 Mach bombs and 2 Facula bombs, they could either
+produce 3 Mach bombs and 5 Facula bombs, or 5 Mach bombs and 2 Facula bombs. The
+replication process can be changed each cycle.
+
+Second, you need to ensure that you have exactly the right number of Mach and
+Facula bombs to destroy the LAMBCHOP device. Too few, and the device might
+survive. Too many, and you might overload the mass capacitors and create a
+singularity at the heart of the space station - not good!
+
+And finally, you were only able to smuggle one of each type of bomb - one Mach,
+one Facula - aboard the ship when you arrived, so that's all you have to start
+with. (Thus it may be impossible to deploy the bombs to destroy the LAMBCHOP,
+but that's not going to stop you from trying!)
+
+You need to know how many replication cycles (generations) it will take to
+generate the correct amount of bombs to destroy the LAMBCHOP. Write a function
+answer(M, F) where M and F are the number of Mach and Facula bombs needed.
+Return the fewest number of generations (as a string) that need to pass before
+you'll have the exact number of bombs necessary to destroy the LAMBCHOP, or the
+string"impossible"if this can't be done! M and F will be string representations
+of positive integers no larger than 10^50. For example, if M = "2" and F = "1",
+one generation would need to pass, so the answer would be "1". However, if M =
+"2" and F = "4", it would not be possible.
+
+Languages
+=========
+
+To provide a Python solution, edit solution.py
+To provide a Java solution, edit solution.java
+
+Test cases
+==========
+
+Inputs:
+    (string) M = "2"
+    (string) F = "1"
+Output:
+    (string) "1"
+
+Inputs:
+    (string) M = "4"
+    (string) F = "7"
+Output:
+    (string) "4"
+
+Use verify [file] to test your solution and see how it does. When you are
+finished editing your code, use submit [file] to submit your answer. If your
+solution passes the test cases, it will be removed from your home folder."""
+
+#SOLUTION
+
+"""For this problem, imagine a tree of tuples that grows exponentially. At the top is (1,1) (1 M bomb and 1 F bomb).
+The next level has 2 tuples (1, 2) and (2,1), and each of those tuples can result in two combinations of bombs, resulting
+in 4 tuples on the next level, etc. To determine what level of the tree a certain tuple is on (and therefore how many 
+generations it would take to produce that tuple), perform operations on the tuple to trace a path back to the top of the tree, 
+counting the number of operations needed to reach the top as you go."""
+
+def answer(M, F):
+    answer = ""
+    M, F = int(M), int(F)
+    
+    #if either M or F is zero, the tuple is definitely not in the tree, since all numbers in the tree are positive.
+    if((M == 0) or (F == 0)):
+        answer = "impossible"
+        return answer
+    
+    """Another situation in which the tuple is not in the tree is if the difference between the two numbers is divisible
+    by the Greatest Common Denominator of the two numbers. If this is true, then when tracing a path back to the top
+    of the tree, the tuple will become (0,0). Take the tuple (9, 6): (9,6) --> (6,6) --> (0,0).
+    Or the tuple (30, 20): (30, 20) --> (10, 20) --> (10, 10) --> (0,0). Use the Euclidean Algorithm to determine if
+    the tuple has this property."""
+    
+    GCD = euclideanGCD(M, F)
+    if((((M-F) % GCD) == 0) and (GCD > 1)):
+        answer = "impossible"
+        return answer
+    
+    #if the tuple does not have either of these two properties, it's definitely in the tree somewhere. 
+    answer = str(calculateGenerations(M,F))
+    return answer
+
+def euclideanGCD(a, b):
+    if (b == 0):
+        return a
+    else:
+        return euclideanGCD(b, a % b)
+
+def calculateGenerations(m, f):
+    
+    """Once the tuple is reduced so that one of the numbers is 1, the number of generations left until the top of the
+    tree is reached is easy to calculate. For example, if the tuple is reduced to (4, 1), 3 operations are left to reach the top:
+    (4, 1) --> (3, 1) --> (2, 1) --> (1, 1). Once this is calculated, the total number of generations left should be known."""
+    
+    if (m == 1):
+        return (f - 1)
+    elif (f == 1):
+        return (m - 1)
+    else:
+        #make sure the first number is bigger, so that when differences are calculated they are positive
+        #the tree is symmetric, so m and f can simply be switched to achieve this result.
+        if (m < f):
+            return calculateGenerations(f, m)
+        else:
+            
+            """The first (m // f) term acts as the counter for the number of generations. You could go 1 generation at a time,
+            and replace both (m//f) terms with 1, but if you use (m//f) you can often count more than one generation at a 
+            time and reduce the number of times you have to call calculateGenerations. For example, you could reduce (15, 7)
+            with two operations like this: (7, 15) --> (7, 8) --> (7, 1), or you can do it with just one operation, subtracting
+            7 from 15 a total of (15//7) == 2 times: (7, 15) --> (7, 1), incrementing the generation count by 2."""
+            
+            return ((m // f) + calculateGenerations(m - (m // f) * f, f))
